@@ -19,9 +19,10 @@ ENV PYTHONUNBUFFERED 1
 ENV PIP_NO_CACHE_DIR off
 
 RUN mkdir -p /etc/prometheus
+RUN chmod a+w /etc/prometheus
 RUN mkdir -p /etc/promgen
 RUN mkdir -p /usr/src/app
-RUN chown promgen /etc/prometheus
+RUN chown -R promgen /etc/prometheus
 
 COPY docker/requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
@@ -35,12 +36,15 @@ RUN pip install -e .
 
 ENV CONFIG_DIR=/etc/promgen
 
-USER promgen
+#USER promgen
+USER root
 EXPOSE 8000
 
 RUN SECRET_KEY=1 promgen collectstatic --noinput
 
 COPY docker/docker-entrypoint.sh /
+COPY docker/wait-for-it.sh /
+COPY docker/bootstrap.sh /
 VOLUME ["/etc/promgen", "/etc/prometheus"]
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["web", "--bind", "0.0.0.0:8000", "--workers", "4"]
